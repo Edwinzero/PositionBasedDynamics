@@ -1,5 +1,4 @@
 include(Visualization/CMakeLists.txt)
-add_definitions(-DPBD_DATA_PATH="../data")
 
 # search all demos
 set(PBD_DEMOS 
@@ -13,10 +12,8 @@ set(PBD_DEMOS
 	PositionBasedElasticRodsDemo
 	RigidBodyDemos
 	SceneLoaderDemo
+	StiffRodsDemos
 )
-
-add_subdirectory(Simulation)
-add_subdirectory(Utils)
 
 if (NOT PBD_NO_DEMOS)
 	foreach (_demo_name ${PBD_DEMOS})
@@ -31,6 +28,3 @@ install(DIRECTORY ./Common
 DESTINATION include/Demos
 FILES_MATCHING PATTERN "*.h")
 
-install(DIRECTORY ./Visualization
-DESTINATION include/Demos
-FILES_MATCHING PATTERN "*.h")

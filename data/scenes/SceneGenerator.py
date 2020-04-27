@@ -7,11 +7,12 @@ import math
 def addParameters(scene, h=0.005, maxIter=5, maxIterVel=5, velocityUpdateMethod=0, contactTolerance=0.05, triangleModelSimulationMethod=2, triangleModelBendingMethod=2, 
                   contactStiffnessRigidBody=1.0, contactStiffnessParticleRigidBody=100.0, 
                   cloth_stiffness=1.0, cloth_bendingStiffness=0.005, cloth_xxStiffness=1.0, cloth_yyStiffness=1.0, cloth_xyStiffness=1.0,
-                  cloth_xyPoissonRatio=0.3, cloth_yxPoissonRatio=0.3, cloth_normalizeStretch=0, cloth_normalizeShear=0, gravity=[0,-9.81,0]):
+                  cloth_xyPoissonRatio=0.3, cloth_yxPoissonRatio=0.3, cloth_normalizeStretch=0, cloth_normalizeShear=0, gravity=[0,-9.81,0], numberOfStepsPerRenderUpdate=4):
     parameters = {  'timeStepSize': h,
                     'gravity': gravity,
                     'maxIter' : maxIter,
 				    'maxIterVel' : maxIterVel,
+					'numberOfStepsPerRenderUpdate': numberOfStepsPerRenderUpdate,
 				    'velocityUpdateMethod' : velocityUpdateMethod,
 				    'contactTolerance': contactTolerance,
 				    'triangleModelSimulationMethod': triangleModelSimulationMethod,
@@ -164,15 +165,27 @@ def addUniversalJoint(scene, rbId1, rbId2, position, axis1, axis2):
 ######################################################
 # add slider joint
 ######################################################
-def addSliderJoint(scene, rbId1, rbId2, position, axis):
+def addSliderJoint(scene, rbId1, rbId2, axis):
     joint = {
 		    'bodyID1': rbId1,
 			'bodyID2': rbId2,
-			'position': position,
             'axis': axis
 		}
     scene['SliderJoints'].append(joint)
     return
+	
+######################################################
+# add damper joint
+######################################################
+def addDamperJoint(scene, rbId1, rbId2, axis, stiffness):
+	joint = {
+			'bodyID1': rbId1,
+			'bodyID2': rbId2,
+			'axis': axis,
+			'stiffness': stiffness
+		}
+	scene['DamperJoints'].append(joint)
+	return	
 
 ######################################################
 # add RigidBodyParticleBallJoint
@@ -189,16 +202,21 @@ def addRigidBodyParticleBallJoint(scene, rbId, particleId):
 ######################################################
 # add TargetAngleMotorHingeJoint
 ######################################################
-def addTargetAngleMotorHingeJoint(scene, rbId1, rbId2, position, axis, target):
-    joint = {
-		    'bodyID1': rbId1,
+def addTargetAngleMotorHingeJoint(scene, rbId1, rbId2, position, axis, target, targetSequence=None, repeatSequence=0):
+	joint = {
+			'bodyID1': rbId1,
 			'bodyID2': rbId2,
 			'position': position,
-            'axis': axis,
-            'target': target
+			'axis': axis
 		}
-    scene['TargetAngleMotorHingeJoints'].append(joint)
-    return
+
+	if targetSequence != None:
+		joint['targetSequence'] = targetSequence
+		joint['repeatSequence'] = repeatSequence
+	else:
+		joint['target'] = target
+	scene['TargetAngleMotorHingeJoints'].append(joint)
+	return
 
 ######################################################
 # add TargetVelocityMotorHingeJoint
@@ -217,11 +235,10 @@ def addTargetVelocityMotorHingeJoint(scene, rbId1, rbId2, position, axis, target
 ######################################################
 # add TargetPositionMotorSliderJoint
 ######################################################
-def addTargetPositionMotorSliderJoint(scene, rbId1, rbId2, position, axis, target):
+def addTargetPositionMotorSliderJoint(scene, rbId1, rbId2, axis, target):
     joint = {
 		    'bodyID1': rbId1,
 			'bodyID2': rbId2,
-			'position': position,
             'axis': axis,
             'target': target
 		}
@@ -231,15 +248,41 @@ def addTargetPositionMotorSliderJoint(scene, rbId1, rbId2, position, axis, targe
 ######################################################
 # add TargetVelocityMotorSliderJoint
 ######################################################
-def addTargetVelocityMotorSliderJoint(scene, rbId1, rbId2, position, axis, target):
+def addTargetVelocityMotorSliderJoint(scene, rbId1, rbId2, axis, target):
     joint = {
 		    'bodyID1': rbId1,
 			'bodyID2': rbId2,
-			'position': position,
             'axis': axis,
             'target': target
 		}
     scene['TargetVelocityMotorSliderJoints'].append(joint)
+    return
+	
+######################################################
+# add spring
+######################################################
+def addRigidBodySpring(scene, rbId1, rbId2, position1, position2, stiffness):
+    joint = {
+		    'bodyID1': rbId1,
+			'bodyID2': rbId2,
+			'position1': position1,
+			'position2': position2,
+			'stiffness': stiffness
+		}
+    scene['RigidBodySprings'].append(joint)
+    return
+	
+######################################################
+# add distance joint
+######################################################
+def addDistanceJoint(scene, rbId1, rbId2, position1, position2):
+    joint = {
+		    'bodyID1': rbId1,
+			'bodyID2': rbId2,
+			'position1': position1,
+			'position2': position2
+		}
+    scene['DistanceJoints'].append(joint)
     return
 
 ######################################################
@@ -255,11 +298,14 @@ def generateScene(name, camPosition=[0, 10, 30], camLookat=[0,0,0]):
     scene['HingeJoints'] = []
     scene['UniversalJoints'] = []
     scene['SliderJoints'] = []
+    scene['DamperJoints'] = []
     scene['RigidBodyParticleBallJoints'] = []
     scene['TargetAngleMotorHingeJoints'] = []
     scene['TargetVelocityMotorHingeJoints'] = []
     scene['TargetPositionMotorSliderJoints'] = []
     scene['TargetVelocityMotorSliderJoints'] = []
+    scene['RigidBodySprings'] = []
+    scene['DistanceJoints'] = []
     scene['TriangleModels'] = []
     scene['TetModels'] = []
 
@@ -284,7 +330,7 @@ def rotation_matrix(axis, angle):
     z = axis[2]
     d = math.sqrt(x*x + y*y + z*z)
     if d < 1.0e-6:
-        print "Vector of rotation matrix is zero!"
+        print ("Vector of rotation matrix is zero!")
         return
     x = x/d;
     y = y/d;
@@ -336,5 +382,15 @@ def scale_vector(v, s):
     res[1] = s*v[1];
     res[2] = s*v[2];
     return res
+	
+######################################################
+# add vector
+######################################################
+def add_vector(v1, v2):
+    res = [0,0,0]
+    res[0] = v1[0] + v2[0];
+    res[1] = v1[1] + v2[1];
+    res[2] = v1[2] + v2[2];
+    return res	
 
 current_id=1

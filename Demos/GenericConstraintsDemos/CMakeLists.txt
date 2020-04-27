@@ -5,6 +5,7 @@ if(WIN32)
   set(SIMULATION_LINK_LIBRARIES freeglut opengl32.lib glu32.lib ${SIMULATION_LINK_LIBRARIES})
   set(SIMULATION_DEPENDENCIES freeglut ${SIMULATION_DEPENDENCIES})
 else()
+  set(OpenGL_GL_PREFERENCE GLVND)
   find_package(GLUT REQUIRED)
   find_package(OpenGL REQUIRED)
 
@@ -15,6 +16,14 @@ else()
   )
 endif()
 
+############################################################
+# GenericParameters
+############################################################
+include_directories(${GenericParameters_INCLUDE_DIR})
+if(TARGET Ext_GenericParameters)
+	set(SIMULATION_DEPENDENCIES ${SIMULATION_DEPENDENCIES} Ext_GenericParameters)
+endif()
+
 add_executable(GenericParticleConstraintsDemo
 	  GenericParticleConstraintsDemo.cpp
 	  
@@ -22,6 +31,30 @@ add_executable(GenericParticleConstraintsDemo
 	  GenericConstraintsModel.h	  
 	  GenericConstraints.cpp
 	  GenericConstraints.h
+
+	  ../Common/TweakBarParameters.cpp
+	  ../Common/TweakBarParameters.h
+	  ../Common/DemoBase.cpp
+	  ../Common/DemoBase.h
+	  
+	  ${VIS_FILES}          
+	  ${PROJECT_PATH}/Common/Common.h
+	  
+	  CMakeLists.txt
+)
+
+add_executable(GenericRigidBodyConstraintsDemo
+	  GenericRigidBodyConstraintsDemo.cpp
+	  
+	  GenericConstraintsModel.cpp
+	  GenericConstraintsModel.h	  
+	  GenericConstraints.cpp
+	  GenericConstraints.h
+
+	  ../Common/TweakBarParameters.cpp
+	  ../Common/TweakBarParameters.h
+	  ../Common/DemoBase.cpp
+	  ../Common/DemoBase.h
 	  
 	  ${VIS_FILES}          
 	  ${PROJECT_PATH}/Common/Common.h
@@ -37,9 +70,17 @@ include_directories(${PROJECT_PATH}/extern/freeglut/include)
 include_directories(${PROJECT_PATH}/extern/glew/include)
 
 set_target_properties(GenericParticleConstraintsDemo PROPERTIES FOLDER "Demos")
-set_target_properties(GenericParticleConstraintsDemo PROPERTIES DEBUG_POSTFIX ${CMAKE_DEBUG_POSTFIX})
-set_target_properties(GenericParticleConstraintsDemo PROPERTIES RELWITHDEBINFO_POSTFIX ${CMAKE_RELWITHDEBINFO_POSTFIX})
-set_target_properties(GenericParticleConstraintsDemo PROPERTIES MINSIZEREL_POSTFIX ${CMAKE_MINSIZEREL_POSTFIX})
+set_target_properties(GenericParticleConstraintsDemo PROPERTIES DEBUG_POSTFIX ${PBD_BINARY_DEBUG_POSTFIX})
+set_target_properties(GenericParticleConstraintsDemo PROPERTIES RELWITHDEBINFO_POSTFIX ${PBD_BINARY_RELWITHDEBINFO_POSTFIX})
+set_target_properties(GenericParticleConstraintsDemo PROPERTIES MINSIZEREL_POSTFIX ${PBD_BINARY_MINSIZEREL_POSTFIX})
 add_dependencies(GenericParticleConstraintsDemo ${SIMULATION_DEPENDENCIES})
 target_link_libraries(GenericParticleConstraintsDemo ${SIMULATION_LINK_LIBRARIES})
+
+set_target_properties(GenericRigidBodyConstraintsDemo PROPERTIES FOLDER "Demos")
+set_target_properties(GenericRigidBodyConstraintsDemo PROPERTIES DEBUG_POSTFIX ${PBD_BINARY_DEBUG_POSTFIX})
+set_target_properties(GenericRigidBodyConstraintsDemo PROPERTIES RELWITHDEBINFO_POSTFIX ${PBD_BINARY_RELWITHDEBINFO_POSTFIX})
+set_target_properties(GenericRigidBodyConstraintsDemo PROPERTIES MINSIZEREL_POSTFIX ${PBD_BINARY_MINSIZEREL_POSTFIX})
+add_dependencies(GenericRigidBodyConstraintsDemo ${SIMULATION_DEPENDENCIES})
+target_link_libraries(GenericRigidBodyConstraintsDemo ${SIMULATION_LINK_LIBRARIES})
+
 VIS_SOURCE_GROUPS()
